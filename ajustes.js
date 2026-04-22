@@ -196,6 +196,80 @@ function setStatus(message, isError = false) {
   status.style.color = isError ? '#dc2626' : '#64748b';
 }
 
+function getEmailEditorElement() {
+  return document.getElementById('edit-email-cuerpo');
+}
+
+function setEmailEditorHtml(value = '') {
+  const editor = getEmailEditorElement();
+  if (!editor) return;
+  editor.innerHTML = String(value || '').trim() ? String(value) : '';
+}
+
+function getEmailEditorHtml() {
+  const editor = getEmailEditorElement();
+  if (!editor) return '';
+  return editor.innerHTML.trim();
+}
+
+function escapeHtml(text = '') {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function insertHtmlInEmailEditor(html) {
+  const editor = getEmailEditorElement();
+  if (!editor) return;
+  editor.focus();
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    editor.innerHTML += html;
+    return;
+  }
+
+  const range = selection.getRangeAt(0);
+  const isInsideEditor = editor.contains(range.commonAncestorContainer);
+  if (!isInsideEditor) {
+    editor.innerHTML += html;
+    return;
+  }
+
+  range.deleteContents();
+  const fragment = range.createContextualFragment(html);
+  const lastNode = fragment.lastChild;
+  range.insertNode(fragment);
+  if (lastNode) {
+    range.setStartAfter(lastNode);
+    range.setEndAfter(lastNode);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+}
+
+function execEmailEditorCommand(command) {
+  const editor = getEmailEditorElement();
+  if (!editor) return;
+  editor.focus();
+  document.execCommand(command, false, null);
+}
+
+function insertEmailEditorLink() {
+  const editor = getEmailEditorElement();
+  if (!editor) return;
+  const selectedText = window.getSelection()?.toString()?.trim() || '';
+  const url = prompt('Introduce la URL del enlace (ejemplo: https://...):', 'https://');
+  if (!url) return;
+  const href = url.trim();
+  if (!href) return;
+  const text = selectedText || href;
+  insertHtmlInEmailEditor(`<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`);
+}
+
 function renderCategorias() {
   const list = document.getElementById('categorias-list');
   if (!list) return;
@@ -360,7 +434,7 @@ function openEditor(categoria = null) {
     formTipo.value = 'standard';
     asunto.value = '';
     emailRecordatorio.value = '';
-    cuerpo.value = '';
+    setEmailEditorHtml('');
     detalleTipo.value = 'standard';
     viviendaOpcionesDraft = [];
     renderCustomFields([]);
@@ -380,7 +454,7 @@ function openEditor(categoria = null) {
   formTipo.value = categoria.formulario?.tipo || 'standard';
   asunto.value = categoria.email?.asunto || '';
   emailRecordatorio.value = categoria.email?.recordatorio || '';
-  cuerpo.value = categoria.email?.cuerpo || '';
+  setEmailEditorHtml(categoria.email?.cuerpo || '');
   const detalleConfig = getCategoriaDetalleConfig(categoria);
   detalleTipo.value = detalleConfig.tipo;
   viviendaOpcionesDraft = Array.isArray(categoria.formulario?.viviendaInteresadaOpciones)
@@ -414,7 +488,7 @@ function collectEditorValues() {
   const tipo = tipoBase === 'standard' && checkedCampos.length > 0 ? 'custom' : tipoBase;
   const asunto = document.getElementById('edit-email-asunto')?.value || '';
   const recordatorio = document.getElementById('edit-email-recordatorio')?.value.trim() || '';
-  const cuerpo = document.getElementById('edit-email-cuerpo')?.value || '';
+  const cuerpo = getEmailEditorHtml();
   const detalleTipoRaw = document.getElementById('edit-detalle-tipo')?.value || 'standard';
   const checkedDetalleCampos = [...document.querySelectorAll('.edit-detalle-campo:checked')].map(el => el.value);
   const campos = tipo === 'custom' ? checkedCampos : [];
@@ -581,9 +655,26 @@ function bindEvents() {
   document.getElementById('edit-email-variable')?.addEventListener('change', (e) => {
     const val = e.target.value;
     if (!val) return;
-    const body = document.getElementById('edit-email-cuerpo');
-    if (body) body.value = `${body.value}${body.value ? ' ' : ''}${val}`;
+    insertHtmlInEmailEditor(escapeHtml(val));
     e.target.value = '';
+  });
+
+  document.querySelector('.email-editor-toolbar')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const cmd = btn.dataset.emailCmd;
+    const action = btn.dataset.emailAction;
+    if (cmd) {
+      execEmailEditorCommand(cmd);
+      return;
+    }
+    if (action === 'link') {
+      insertEmailEditorLink();
+      return;
+    }
+    if (action === 'clear-format') {
+      execEmailEditorCommand('removeFormat');
+    }
   });
 
   document.getElementById('campos-disponibles')?.addEventListener('change', (e) => {

@@ -114,7 +114,22 @@
           <div class="mb-3">
             <label class="form-label" for="edit-email-cuerpo">Cuerpo email</label>
             <div class="email-prefix-readonly">Buenos días/tardes {{nombre}},</div>
-            <textarea id="edit-email-cuerpo" rows="7" class="form-control form-control-sm mt-2"></textarea>
+            <div class="email-editor-toolbar mt-2" role="toolbar" aria-label="Formato del cuerpo del email">
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-email-cmd="bold" title="Negrita"><i class="bi bi-type-bold"></i></button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-email-cmd="italic" title="Cursiva"><i class="bi bi-type-italic"></i></button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-email-cmd="underline" title="Subrayado"><i class="bi bi-type-underline"></i></button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-email-action="link" title="Insertar enlace"><i class="bi bi-link-45deg"></i></button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-email-action="clear-format" title="Quitar formato"><i class="bi bi-eraser"></i></button>
+            </div>
+            <div
+              id="edit-email-cuerpo"
+              class="email-editor form-control form-control-sm mt-2"
+              contenteditable="true"
+              role="textbox"
+              aria-multiline="true"
+              data-placeholder="Escribe aquí el cuerpo del email…"
+            ></div>
+            <small class="text-muted d-block mt-1">Puedes usar negrita, cursiva y enlaces. El formato se guardará en la plantilla.</small>
           </div>
 
           <div class="config-actions">

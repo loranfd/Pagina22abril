@@ -187,6 +187,13 @@ body {
   flex-wrap: wrap;
 }
 
+.email-editor-toolbar .btn.active,
+.email-editor-toolbar .btn:active {
+  background-color: #cbd5e1;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
 .email-editor {
   min-height: 180px;
   white-space: pre-wrap;

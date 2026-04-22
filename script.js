@@ -1401,7 +1401,7 @@ function obtenerTemplateEmailPorContacto(contacto, nombreCompleto) {
 function crearEnlaceEmail(email, contacto, nombreCompleto) {
   const template = obtenerTemplateEmailPorContacto(contacto, nombreCompleto);
   const asunto = template.asunto || 'Seguimiento de tu solicitud';
-  const cuerpo = htmlToMailtoPlainText(template.cuerpo || '');
+  const cuerpo = template.cuerpo || '';
 
   // Correos que van en CCO (copia oculta)
   const correosCCO = 'tecnico@proyectopia.es;victorhermo@proyectopia.es';
@@ -3291,24 +3291,6 @@ function getEmailTemplateByCategoria(categoriaId, payload = {}) {
   return { asunto, cuerpo: htmlBody };
 }
 
-function htmlToMailtoPlainText(html = '') {
-  const container = document.createElement('div');
-  container.innerHTML = String(html || '');
-  container.querySelectorAll('a[href]').forEach((anchor) => {
-    const text = (anchor.textContent || '').trim();
-    const href = (anchor.getAttribute('href') || '').trim();
-    anchor.textContent = href ? `${text || href} (${href})` : text;
-  });
-  const withBreaks = container.innerHTML
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n\n')
-    .replace(/<\/div>/gi, '\n');
-  const textContainer = document.createElement('div');
-  textContainer.innerHTML = withBreaks;
-  return (textContainer.textContent || '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
 // ====================== CARGA DE CONTACTOS ======================
 async function cargarContactos(incluirEliminados = false) {
   try {

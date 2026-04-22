@@ -256,6 +256,7 @@ function execEmailEditorCommand(command) {
   if (!editor) return;
   editor.focus();
   document.execCommand(command, false, null);
+  updateEmailToolbarState();
 }
 
 function insertEmailEditorLink() {
@@ -268,6 +269,22 @@ function insertEmailEditorLink() {
   if (!href) return;
   const text = selectedText || href;
   insertHtmlInEmailEditor(`<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`);
+  updateEmailToolbarState();
+}
+
+function updateEmailToolbarState() {
+  const editor = getEmailEditorElement();
+  const toolbar = document.querySelector('.email-editor-toolbar');
+  if (!editor || !toolbar) return;
+  const selection = window.getSelection();
+  const hasSelectionInEditor = selection && selection.rangeCount > 0 && editor.contains(selection.anchorNode);
+  const cmdButtons = [...toolbar.querySelectorAll('button[data-email-cmd]')];
+  cmdButtons.forEach((button) => {
+    const cmd = button.dataset.emailCmd;
+    const isActive = hasSelectionInEditor ? document.queryCommandState(cmd) : false;
+    button.classList.toggle('active', Boolean(isActive));
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
 }
 
 function renderCategorias() {
@@ -442,6 +459,7 @@ function openEditor(categoria = null) {
     renderViviendaOpcionesList();
     updateFormTipoUI('standard');
     updateDetalleTipoUI('standard');
+    updateEmailToolbarState();
     setStatus('');
     return;
   }
@@ -465,6 +483,7 @@ function openEditor(categoria = null) {
   renderViviendaOpcionesList();
   updateFormTipoUI(formTipo.value);
   updateDetalleTipoUI(detalleTipo.value);
+  updateEmailToolbarState();
   setStatus('');
 }
 
@@ -675,6 +694,18 @@ function bindEvents() {
     if (action === 'clear-format') {
       execEmailEditorCommand('removeFormat');
     }
+  });
+
+  const emailEditor = getEmailEditorElement();
+  emailEditor?.addEventListener('keyup', updateEmailToolbarState);
+  emailEditor?.addEventListener('mouseup', updateEmailToolbarState);
+  emailEditor?.addEventListener('focus', updateEmailToolbarState);
+  emailEditor?.addEventListener('blur', updateEmailToolbarState);
+  document.addEventListener('selectionchange', () => {
+    if (!document.activeElement || document.activeElement.id !== 'edit-email-cuerpo') {
+      return;
+    }
+    updateEmailToolbarState();
   });
 
   document.getElementById('campos-disponibles')?.addEventListener('change', (e) => {

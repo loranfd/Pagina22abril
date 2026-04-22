@@ -819,7 +819,7 @@ function configurarEmbudo() {
       const tbody = document.querySelector('#tabla-comparacion tbody');
       if (!tbody) return;
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td><input value="Campaña nueva"></td><td><input type="number" class="cmp-coste"></td><td><input type="number" class="cmp-form"></td><td class="cmp-cpl">0.00</td>';
+      tr.innerHTML = '<td><input value="Campaña nueva"></td><td><input type="number" class="cmp-coste"></td><td><input type="number" class="cmp-form"></td><td class="cmp-cpl">—</td><td class="cmp-conv">—</td>';
       tbody.appendChild(tr);
     });
   }
@@ -836,7 +836,7 @@ function actualizarCamposCanal() {
   const mostrarInteracciones = canal !== 'google';
   const groupInteracciones = document.getElementById('group-interacciones');
   const metricEng = document.getElementById('metric-eng');
-  const metricClicInter = document.getElementById('metric-clic-inter');
+  const metricClicInter = document.getElementById('metric-int-lead');
 
   if (groupInteracciones) groupInteracciones.style.display = mostrarInteracciones ? 'flex' : 'none';
   if (metricEng) metricEng.style.display = mostrarInteracciones ? 'block' : 'none';
@@ -902,43 +902,65 @@ function calcularEmbudo() {
   const impPorLead = formularios > 0 && impresiones > 0 ? safeDiv(impresiones, formularios) : null;
   const cpmClick = impresiones > 0 ? safeDiv(clicsAtr, impresiones) * 1000 : null;
 
-  setMetricValue('res-cpc', cpc);
+  setMetricValue('res-main-clics', clics > 0 ? clics : null, '', clics > 0);
+  setMetricValue('res-main-coste', coste > 0 ? coste : null, '€', coste > 0);
+  setMetricValue('res-main-form', formularios > 0 ? formularios : null, '', formularios > 0);
   setMetricValue('res-conv', conv, '%', conv !== null);
   setMetricValue('res-cpl', cpl);
+  setMetricValue('res-funnel-imp', impresiones > 0 ? impresiones : null, '', impresiones > 0);
+  setMetricValue('res-funnel-clics', clicsAtr > 0 ? clicsAtr : null, '', clicsAtr > 0);
+  setMetricValue('res-funnel-conv', traficoConv, '%', traficoConv !== null);
+  setMetricValue('res-int-lead', hasInteracciones && interacciones > 0 && formularios > 0 ? safeDiv(formularios, interacciones) * 100 : null, '%', hasInteracciones && interacciones > 0 && formularios > 0);
   setMetricValue('res-ctr', ctrCalc, '%', ctrCalc !== null);
   setMetricValue('res-eng', engagement, '%', engagement !== null);
-  setMetricValue('res-clic-inter', clicInter, '', clicInter !== null);
-  setMetricValue('res-calidad-conv', traficoConv, '%', traficoConv !== null);
   setMetricValue('res-clics-cliente', clicsPorCliente, '', clicsPorCliente !== null);
-  setMetricValue('res-rent-cpl', cpl, '', cpl !== null);
+  setMetricValue('res-coste-util', cpl, '€', cpl !== null);
+  setMetricValue('res-rent-cpl', cpl, '€', cpl !== null);
   setMetricValue('res-clientes-100', clientes100, '', clientes100 !== null);
-  setMetricValue('res-inst-i-c', clicInter !== null ? clicInter * 100 : null, '%', clicInter !== null);
-  setMetricValue('res-inst-clic-inter', clicInter, '', clicInter !== null);
-  setMetricValue('res-inst-int-form', intPorForm, '', intPorForm !== null);
-  setMetricValue('res-goo-ctr', ctrCalc, '%', ctrCalc !== null);
-  setMetricValue('res-goo-imp-lead', impPorLead, '', impPorLead !== null);
-  setMetricValue('res-goo-cpm-click', cpmClick, '', cpmClick !== null);
+  setMetricValue('res-cpm', impresiones > 0 ? safeDiv(coste, impresiones) * 1000 : null, '€', impresiones > 0 && coste > 0);
+  setMetricValue('res-canal-m1', canal === 'google' ? impPorLead : engagement, canal === 'google' ? '' : '%', canal === 'google' ? impPorLead !== null : engagement !== null);
+  setMetricValue('res-canal-m2', canal === 'google' ? cpmClick : intPorForm, '', canal === 'google' ? cpmClick !== null : intPorForm !== null);
+  const canalActivoEl = document.getElementById('res-canal-activo');
+  if (canalActivoEl) {
+    canalActivoEl.classList.remove('unavailable');
+    canalActivoEl.textContent = canal === 'google' ? 'Google Ads' : (canal === 'otro' ? 'Otro canal' : 'Instagram/Facebook/LinkedIn');
+  }
   const filasComparacion = [...document.querySelectorAll('#tabla-comparacion tbody tr')];
   filasComparacion.forEach(row => {
     const costeRow = parseFloat(row.querySelector('.cmp-coste')?.value) || 0;
     const formRow = parseFloat(row.querySelector('.cmp-form')?.value) || 0;
-    row.querySelector('.cmp-cpl').textContent = safeDiv(costeRow, formRow).toFixed(2);
+    const cplRow = formRow > 0 ? safeDiv(costeRow, formRow) : null;
+    const convRow = clics > 0 && formRow > 0 ? safeDiv(formRow, clics) * 100 : null;
+    row.querySelector('.cmp-cpl').textContent = cplRow !== null ? cplRow.toFixed(2) : '—';
+    row.querySelector('.cmp-conv').textContent = convRow !== null ? `${convRow.toFixed(2)}%` : '—';
   });
   const tbodyComparacion = document.querySelector('#tabla-comparacion tbody');
   filasComparacion
     .sort((a, b) => {
-      const av = parseFloat(a.querySelector('.cmp-cpl')?.textContent || '0') || 0;
-      const bv = parseFloat(b.querySelector('.cmp-cpl')?.textContent || '0') || 0;
-      return av - bv;
+      const av = parseFloat(a.querySelector('.cmp-cpl')?.textContent || '999999') || 999999;
+      const bv = parseFloat(b.querySelector('.cmp-cpl')?.textContent || '999999') || 999999;
+      if (av !== bv) return av - bv;
+      const ac = parseFloat((a.querySelector('.cmp-conv')?.textContent || '0').replace('%', '')) || 0;
+      const bc = parseFloat((b.querySelector('.cmp-conv')?.textContent || '0').replace('%', '')) || 0;
+      if (ac !== bc) return bc - ac;
+      const acost = parseFloat(a.querySelector('.cmp-coste')?.value || '0') || 0;
+      const bcost = parseFloat(b.querySelector('.cmp-coste')?.value || '0') || 0;
+      return acost - bcost;
     })
     .forEach(row => tbodyComparacion?.appendChild(row));
 
-  const diagAnuncio = ctrCalc !== null && ctrCalc >= 1.5 ? '✅ OK' : (ctrCalc !== null ? '⚠️ Mejorable' : '—');
-  const diagTrafico = traficoConv !== null && traficoConv >= 3 ? '✅ OK' : (traficoConv !== null ? '⚠️ Mejorable' : '—');
-  const diagRent = cpl !== null && cpl <= 50 ? '✅ OK' : (cpl !== null ? '⚠️ Revisar' : '—');
+  const diagAnuncio = ctrCalc !== null && ctrCalc >= 1.5 ? '✅ OK' : (ctrCalc !== null ? '⚠️ Problema de tráfico' : '—');
+  const diagTrafico = traficoConv !== null && traficoConv >= 3 ? '✅ OK' : (traficoConv !== null ? '⚠️ Problema de conversión' : '—');
+  const diagRent = cpl !== null && cpl <= 50 ? '✅ Campaña rentable' : (cpl !== null ? '❌ Campaña ineficiente' : '—');
   document.getElementById('diag-anuncio').textContent = diagAnuncio;
   document.getElementById('diag-trafico').textContent = diagTrafico;
   document.getElementById('diag-rent').textContent = diagRent;
+  document.getElementById('diag-conclusion').textContent = (diagRent.startsWith('✅') && diagTrafico.startsWith('✅')) ? 'Buen rendimiento general' : 'Hay margen de mejora';
+  document.getElementById('diag-reco').textContent = diagAnuncio.includes('tráfico')
+    ? 'Recomendación: mejora creatividades y segmentación.'
+    : (diagTrafico.includes('conversión')
+      ? 'Recomendación: optimiza landing/formulario.'
+      : 'Recomendación: escala presupuesto de forma gradual.');
 }
 
 

@@ -258,11 +258,22 @@ body {
   gap: 1rem;
   margin: 2rem 0;
 }
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
 
 .metric-block {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+.metric-block h3 {
+  padding: 0.9rem 1rem;
+  color: #fff;
+  font-size: 1.05rem;
 }
 
 .metric-block > summary {
@@ -307,6 +318,13 @@ body {
 .bg-compare > summary { background: linear-gradient(135deg, #4b5563, #1f2937); }
 .bg-advanced > summary { background: linear-gradient(135deg, #64748b, #334155); }
 .bg-diagnostic > summary { background: linear-gradient(135deg, #0f766e, #115e59); }
+.bg-campaign h3 { background: linear-gradient(135deg, #2563eb, #4338ca); }
+.bg-attraction h3 { background: linear-gradient(135deg, #f97316, #ea580c); }
+.bg-quality h3 { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
+.bg-profit h3 { background: linear-gradient(135deg, #16a34a, #15803d); }
+.bg-compare h3 { background: linear-gradient(135deg, #4b5563, #1f2937); }
+.bg-advanced h3 { background: linear-gradient(135deg, #64748b, #334155); }
+.bg-diagnostic h3 { background: linear-gradient(135deg, #0f766e, #115e59); }
 
 .metric-subblock {
   border: 1px solid #dbeafe;
@@ -342,6 +360,9 @@ body {
 
 .embudo-value.unavailable {
   color: #94a3b8;
+}
+.embudo-value.big {
+  font-size: 2.4rem;
 }
 
 .embudo-card h3 {

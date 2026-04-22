@@ -95,6 +95,7 @@ async function cargarDatos() {
       datosCompletos = result.data;
       datosGlobales = procesarDatos(datosCompletos);
       datosFiltrados = datosCompletos;
+      configurarEmbudo();
       poblarMeses(datosCompletos);
       mostrarDashboard();
     } else {
@@ -794,116 +795,93 @@ function mostrarMapaUbicaciones() {
 
 function configurarEmbudo() {
   const btnCalcular = document.getElementById('btn-calcular-embudo');
+  const selectCategoria = document.getElementById('embudo-categoria');
+  const btnAddCampania = document.getElementById('btn-add-campania');
+
+  if (selectCategoria) {
+    selectCategoria.innerHTML = '<option value="all">Todo</option>';
+    (appConfig?.categorias || []).forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.nombre;
+      selectCategoria.appendChild(opt);
+    });
+  }
+
   if (btnCalcular) {
     btnCalcular.removeEventListener('click', calcularEmbudo);
     btnCalcular.addEventListener('click', calcularEmbudo);
   }
+
+  if (btnAddCampania) {
+    btnAddCampania.addEventListener('click', () => {
+      const tbody = document.querySelector('#tabla-comparacion tbody');
+      if (!tbody) return;
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td><input value="Campaña nueva"></td><td><input type="number" class="cmp-coste"></td><td><input type="number" class="cmp-form"></td><td class="cmp-cpl">0.00</td>';
+      tbody.appendChild(tr);
+    });
+  }
 }
 
 function calcularEmbudo() {
-  const clics = parseInt(document.getElementById('input-clics').value) || 0;
-  const cpc = parseFloat(document.getElementById('input-cpc').value) || 0.5;
+  const clics = parseFloat(document.getElementById('input-clics').value) || 0;
+  const coste = parseFloat(document.getElementById('input-coste').value) || 0;
+  const categoriaFiltro = document.getElementById('embudo-categoria')?.value || 'all';
   const fechaInicio = document.getElementById('input-fecha-inicio').value;
   const finVal = document.getElementById('input-fecha-fin').value;
 
-  if (!clics || !fechaInicio || !finVal || !datosGlobales) {
-    document.getElementById('embudo-resultados').style.display = 'none';
-    document.getElementById('embudo-grafica').style.display = 'none';
-    alert('Por favor, completa todos los campos del embudo.');
+  if (!fechaInicio || !finVal || !datosGlobales) {
+    alert('Completa fecha inicio y fecha fin para calcular.');
     return;
   }
-
-  // Crear fechas con hora local para evitar problemas de zona horaria
   const inicio = new Date(fechaInicio + 'T00:00:00');
   const fin = new Date(finVal + 'T23:59:59');
-
-  console.log('=== DEBUG EMBUDO ===');
-  console.log('Fecha inicio:', inicio);
-  console.log('Fecha fin:', fin);
-
-
-  // Filtrar contactos del rango que sean de Villas y de procedencia Web
-  const contactosEnRango = datosGlobales.dataCompleta.filter(c => {
-    // 1. Validar fecha
+  const contactosEnRango = (datosGlobales.dataCompleta || []).filter(c => {
     if (!c['Fecha']) return false;
-    
-    // Parsear fecha del contacto (sin conversión UTC)
-    let fechaContacto;
-    if (c['Fecha'] instanceof Date) {
-      fechaContacto = c['Fecha'];
-    } else {
-      const fechaStr = String(c['Fecha']).trim();
-      // Si viene como YYYY-MM-DD, añadir T00:00:00
-      if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
-        fechaContacto = new Date(fechaStr + 'T00:00:00');
-      } else {
-        fechaContacto = new Date(fechaStr);
-      }
-    }
-    
-    if (isNaN(fechaContacto)) return false;
-    
-    // Verificar que esté en el rango
-    if (fechaContacto < inicio || fechaContacto > fin) return false;
-    
-    // 2. Verificar procedencia Web
-    const procedenciaRaw = c['procedencia-contacto'] || c['origen-contacto'] || '';
-    const procedencia = normalizar(procedenciaRaw);
-    const isWeb = procedencia.includes('web') || procedencia.includes('pagina web');
-    
-    // 3. Verificar categoría resuelta
+    const fecha = /^\d{4}-\d{2}-\d{2}$/.test(String(c['Fecha']).trim())
+      ? new Date(String(c['Fecha']).trim() + 'T00:00:00')
+      : new Date(c['Fecha']);
+    if (isNaN(fecha) || fecha < inicio || fecha > fin) return false;
+    if (categoriaFiltro === 'all') return true;
     const categoria = CategoriaSystem.resolveCategoria(appConfig, c);
-    const isVillas = categoria?.id === CategoriaSystem.BASE_CATEGORY_IDS.VILLAS;
-    
-    const cumpleCondiciones = isWeb && isVillas;
-    
-    // Debug detallado
-    if (cumpleCondiciones) {
-      console.log('✅ Contacto válido:', {
-        nombre: c['your-name'],
-        fecha: fechaContacto.toLocaleDateString('es-ES'),
-        procedencia: procedenciaRaw,
-        viviendaInteresada: c['vivienda-interesada'],
-        isWeb,
-        isVillas
-      });
-    }
-    
-    return cumpleCondiciones;
+    return categoria?.id === categoriaFiltro;
   });
 
-  console.log('Total contactos válidos:', contactosEnRango.length);
-  console.log('===================');
+  const formularios = contactosEnRango.length;
+  const safeDiv = (a, b) => (b > 0 ? a / b : 0);
 
-  const tasaConversion = clics > 0 ? ((contactosEnRango.length / clics) * 100) : 0;
-  const costoTotal = clics * cpc;
-  const costoPorContacto = contactosEnRango.length > 0 ? (costoTotal / contactosEnRango.length) : 0;
+  document.getElementById('input-formularios').value = formularios;
+  document.getElementById('res-cpc').textContent = safeDiv(coste, clics).toFixed(2);
+  document.getElementById('res-conv').textContent = (safeDiv(formularios, clics) * 100).toFixed(2) + '%';
+  document.getElementById('res-cpl').textContent = safeDiv(coste, formularios).toFixed(2);
 
-  const resultadosDiv = document.getElementById('embudo-resultados');
-  resultadosDiv.style.display = 'grid';
-  resultadosDiv.style.opacity = '0';
-  
-  document.getElementById('embudo-clics').textContent = clics.toLocaleString('es-ES');
-  document.getElementById('embudo-contactos').textContent = contactosEnRango.length;
-  document.getElementById('embudo-conversion').textContent = tasaConversion.toFixed(2) + '%';
-  document.getElementById('embudo-costo-total').textContent = costoTotal.toFixed(2) + '€';
-  document.getElementById('embudo-costo-contacto').textContent = costoPorContacto.toFixed(2) + '€';
+  const impresiones = parseFloat(document.getElementById('input-impresiones')?.value) || 0;
+  const clicsAtr = parseFloat(document.getElementById('input-clics-atr')?.value) || clics;
+  const interacciones = parseFloat(document.getElementById('input-interacciones')?.value) || 0;
+  document.getElementById('res-ctr').textContent = (safeDiv(clicsAtr, impresiones) * 100).toFixed(2) + '%';
+  document.getElementById('res-eng').textContent = (safeDiv(interacciones, impresiones) * 100).toFixed(2) + '%';
+  document.getElementById('res-clic-inter').textContent = safeDiv(clicsAtr, interacciones).toFixed(2);
 
-  setTimeout(() => {
-    resultadosDiv.style.transition = 'opacity 0.5s ease';
-    resultadosDiv.style.opacity = '1';
-  }, 50);
+  document.getElementById('res-calidad-conv').textContent = (safeDiv(formularios, clicsAtr) * 100).toFixed(2) + '%';
+  document.getElementById('res-clics-cliente').textContent = safeDiv(clicsAtr, formularios).toFixed(2);
 
-  const graficaDiv = document.getElementById('embudo-grafica');
-  graficaDiv.style.display = 'block';
-  document.getElementById('embudo-porcentaje').textContent = tasaConversion.toFixed(2) + '%';
-  
-  const bar = graficaDiv.querySelector('.progress-bar');
-  bar.style.width = '0%';
-  setTimeout(() => {
-    bar.style.transition = 'width 1s ease';
-    bar.style.width = Math.min(tasaConversion, 100) + '%';
-  }, 100);
+  document.getElementById('res-rent-cpl').textContent = safeDiv(coste, formularios).toFixed(2);
+  document.getElementById('res-clientes-100').textContent = (safeDiv(formularios, coste) * 100).toFixed(2);
+
+  document.getElementById('res-inst-i-c').textContent = (safeDiv(clicsAtr, interacciones) * 100).toFixed(2) + '%';
+  document.getElementById('res-inst-c-cl').textContent = (safeDiv(formularios, clicsAtr) * 100).toFixed(2) + '%';
+  document.getElementById('res-inst-i-cl').textContent = (safeDiv(formularios, interacciones) * 100).toFixed(2) + '%';
+
+  document.getElementById('res-goo-ctr').textContent = (safeDiv(clicsAtr, impresiones) * 100).toFixed(2) + '%';
+  document.getElementById('res-goo-conv').textContent = (safeDiv(formularios, clicsAtr) * 100).toFixed(2) + '%';
+  document.getElementById('res-goo-imp-lead').textContent = safeDiv(impresiones, formularios).toFixed(2);
+
+  document.querySelectorAll('#tabla-comparacion tbody tr').forEach(row => {
+    const costeRow = parseFloat(row.querySelector('.cmp-coste')?.value) || 0;
+    const formRow = parseFloat(row.querySelector('.cmp-form')?.value) || 0;
+    row.querySelector('.cmp-cpl').textContent = safeDiv(costeRow, formRow).toFixed(2);
+  });
 }
 
 

@@ -1401,7 +1401,7 @@ function obtenerTemplateEmailPorContacto(contacto, nombreCompleto) {
 function crearEnlaceEmail(email, contacto, nombreCompleto) {
   const template = obtenerTemplateEmailPorContacto(contacto, nombreCompleto);
   const asunto = template.asunto || 'Seguimiento de tu solicitud';
-  const cuerpo = template.cuerpo || '';
+  const cuerpo = htmlToMailtoBody(template.cuerpo || '');
 
   // Correos que van en CCO (copia oculta)
   const correosCCO = 'tecnico@proyectopia.es;victorhermo@proyectopia.es';
@@ -1410,6 +1410,50 @@ function crearEnlaceEmail(email, contacto, nombreCompleto) {
   const destinatarioPrincipal = email || '';
   
   return `mailto:${destinatarioPrincipal}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}&bcc=${encodeURIComponent(correosCCO)}`;
+}
+
+function crearEnlaceEmailSaludo(email, contacto, nombreCompleto) {
+  const template = obtenerTemplateEmailPorContacto(contacto, nombreCompleto);
+  const asunto = template.asunto || 'Seguimiento de tu solicitud';
+  const saludo = getEmailPrefix((nombreCompleto || contacto?.['your-name'] || '').trim());
+  const cuerpo = htmlToMailtoBody(saludo);
+  const correosCCO = 'tecnico@proyectopia.es;victorhermo@proyectopia.es';
+  const destinatarioPrincipal = email || '';
+  return `mailto:${destinatarioPrincipal}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}&bcc=${encodeURIComponent(correosCCO)}`;
+}
+
+function htmlToMailtoBody(html = '') {
+  const container = document.createElement('div');
+  container.innerHTML = String(html || '');
+
+  container.querySelectorAll('a[href]').forEach((anchor) => {
+    const text = (anchor.textContent || '').trim();
+    const href = (anchor.getAttribute('href') || '').trim();
+    anchor.textContent = href ? `${text || href} (${href})` : text;
+  });
+
+  container.querySelectorAll('b,strong').forEach((el) => {
+    el.textContent = `**${el.textContent || ''}**`;
+  });
+  container.querySelectorAll('i,em').forEach((el) => {
+    el.textContent = `*${el.textContent || ''}*`;
+  });
+  container.querySelectorAll('u').forEach((el) => {
+    el.textContent = `_${el.textContent || ''}_`;
+  });
+
+  const withBreaks = container.innerHTML
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/div>/gi, '\n');
+
+  const textContainer = document.createElement('div');
+  textContainer.innerHTML = withBreaks;
+  return (textContainer.textContent || '')
+    .replace(/\u00A0/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 function capitalizarPrimerasLetras(texto) {
   if (!texto) return '';
@@ -1479,7 +1523,7 @@ function crearFilaPrincipal(c, idx, esEliminado, llamado, respondido, idPersona,
 // Función modularizada para crear la fila de detalle
 function crearFilaDetalle(c, idPersona, tipoVivienda, nombre) {
   const templateEmail = obtenerTemplateEmailPorContacto(c, nombre);
-  const mensajeTexto = templateEmail.cuerpo || 'Sin plantilla de email configurada para esta categoría.';
+  const mensajeHtml = templateEmail.cuerpo || '<p>Sin plantilla de email configurada para esta categoría.</p>';
   const trDetalle = document.createElement('tr');
   trDetalle.className = 'fila-detalle';
   trDetalle.style.display = 'none';
@@ -1496,7 +1540,7 @@ function crearFilaDetalle(c, idPersona, tipoVivienda, nombre) {
                  box-shadow: 0 2px 6px rgba(108,92,231,0.1); font-size:.98rem; line-height:1.3;
                  display: flex; flex-direction: column; color: #000; text-align: left; box-sizing: border-box;">
         <div style="font-weight:600; font-size:1.03rem; margin-bottom:0.3rem; border-bottom:1px solid #cbd5e1; padding-bottom:0.18rem;">
-          Mensaje para copiar
+          Mensaje con formato
         </div>
        <div class="selector-correo-container" style="display: ${esCategoriaVillasPorLabel(tipoVivienda, c) ? 'flex' : 'none'}; align-items:center; gap:8px; margin-bottom: 0.3rem;">
           <label for="selector-correo-${idPersona}" style="font-weight:600; font-size:0.9rem;">Correo:</label>
@@ -1512,8 +1556,8 @@ function crearFilaDetalle(c, idPersona, tipoVivienda, nombre) {
             style="background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding:5px; min-width:28px; min-height:28px;" aria-label="Copiar mensaje">
           </button>
         </div>
-        <textarea class="texto-mensaje" readonly
-          style="width: 100%; height: 133px; resize: none; border-radius: 8px; border: 1px solid #d1d5db; padding: 0.5rem; font-family: monospace; font-size: 1rem;">${mensajeTexto}</textarea>
+        <div class="texto-mensaje-html"
+          style="width: 100%; height: 170px; overflow: auto; border-radius: 8px; border: 1px solid #d1d5db; padding: 0.6rem; font-size: 0.95rem; background: #fff;">${mensajeHtml}</div>
         <div class="mensaje-copiado" aria-live="polite" role="alert"
           style="color: #16a34a; font-size: 0.97rem; font-weight: 600; margin-top: 0.4rem; opacity: 0; transition: opacity 0.3s ease; user-select: none; height: 1.2em;">
           ¡Texto copiado!
@@ -1579,6 +1623,7 @@ function agregarContenidoDetalle(trDetalle, c, tipoVivienda, nombre, idPersona) 
     }
   } catch (e) { /* ignore */ }
   const emailLink = crearEnlaceEmail(c['your-email'] || '', c, nombre);
+  const emailLinkSaludo = crearEnlaceEmailSaludo(c['your-email'] || '', c, nombre);
 
 if (esCategoriaVillasPorLabel(tipoVivienda, c)) {
     const defaultFieldsVillas = ['vivienda-interesada', 'origen-contacto', 'Notas'];
@@ -1587,12 +1632,17 @@ if (esCategoriaVillasPorLabel(tipoVivienda, c)) {
       <div style="font-weight:600; font-size:1.05rem; margin-bottom:0.7rem; border-bottom:1px solid #cbd5e1; padding-bottom:0.3rem;">
         Detalles - Villas Isla de Cortegada
       </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
         <div class="detalle-email" style="word-break: break-all; max-width: calc(100% - 130px);">${c['your-email'] || ''}</div>
-        
-        <a class="btn-enviar-email btn btn-sm btn-primary" href="${emailLink}" aria-label="Enviar email">
-          Enviar email
-        </a>
+        <div style="display:flex; flex-direction:column; gap:0.45rem;">
+          <a class="btn-enviar-email btn btn-sm btn-primary" href="${emailLink}" aria-label="Enviar email completo">
+            Enviar email
+          </a>
+          <a class="btn-enviar-email-saludo btn btn-sm btn-outline-primary" href="${emailLinkSaludo}" aria-label="Abrir borrador solo saludo">
+            <span style="display:block;">Abrir borrador</span>
+            <small style="display:block; color:#6b7280; font-weight:500;">(Solo saludo)</small>
+          </a>
+        </div>
       </div>
       ${buildDetalleRowsHTML(c, camposDetalle)}
     `;
@@ -1603,12 +1653,17 @@ if (esCategoriaVillasPorLabel(tipoVivienda, c)) {
       <div style="font-weight:600; font-size:1.05rem; margin-bottom:0.7rem; border-bottom:1px solid #cbd5e1; padding-bottom:0.3rem;">
         Detalles del contacto
       </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
         <div class="detalle-email" style="word-break: break-all;">${c['your-email'] || ''}</div>
-       
-        <a href="${crearEnlaceEmail(c['your-email'] || '', c, nombre)}" style="background-color: #2563eb; color: white; padding: 6px 14px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.92rem; transition: background-color 0.3s ease;" aria-label="Enviar email">
-          Enviar email
-        </a>
+        <div style="display:flex; flex-direction:column; gap:0.45rem;">
+          <a class="btn-enviar-email" href="${crearEnlaceEmail(c['your-email'] || '', c, nombre)}" style="background-color: #2563eb; color: white; padding: 6px 14px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.92rem; transition: background-color 0.3s ease;" aria-label="Enviar email completo">
+            Enviar email
+          </a>
+          <a class="btn-enviar-email-saludo" href="${crearEnlaceEmailSaludo(c['your-email'] || '', c, nombre)}" style="border: 1px solid #2563eb; color: #1d4ed8; padding: 6px 14px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.92rem; background:#eff6ff;" aria-label="Abrir borrador solo saludo">
+            <span style="display:block;">Abrir borrador</span>
+            <small style="display:block; color:#6b7280; font-weight:500;">(Solo saludo)</small>
+          </a>
+        </div>
       </div>
       ${buildDetalleRowsHTML(c, camposDetalle)}
     `;
@@ -1625,9 +1680,10 @@ const avisoDiv = trDetalle.querySelector(`#aviso-recordatorio-${idPersona}`);
 
   const btnProgramar = trDetalle.querySelector('.btn-programar-recordatorio');
   const btnHecho = trDetalle.querySelector('.btn-marcar-hecho');
-  const selectorCorreo = trDetalle.querySelector(`#selector-correo-${idPersona}`);
-  const textareaMensaje = trDetalle.querySelector('.texto-mensaje');
+const selectorCorreo = trDetalle.querySelector(`#selector-correo-${idPersona}`);
+  const mensajeHtmlBox = trDetalle.querySelector('.texto-mensaje-html');
   const btnEnviarEmail = trDetalle.querySelector('.btn-enviar-email');
+  const btnEnviarEmailSaludo = trDetalle.querySelector('.btn-enviar-email-saludo');
 
 // Obtener fecha de recordatorio del contacto usando la función existente
 const fechaRecordatorio = obtenerFechaAvisoDate(c);
@@ -1661,9 +1717,10 @@ if (esCategoriaVillasPorLabel(tipoVivienda, c) && selectorCorreo) {
     const nombreCompleto = trDetalle.querySelector('.detalle-mensaje')?.dataset?.nombreCompleto || '';
     const actualizarMensajeYAsunto = (tipo) => {
       const { cuerpo } = obtenerTemplateEmailPorContacto(c, nombreCompleto);
-      const texto = cuerpo || 'Sin plantilla de email configurada para esta categoría.';
-      if (textareaMensaje) textareaMensaje.value = texto;
+      const texto = cuerpo || '<p>Sin plantilla de email configurada para esta categoría.</p>';
+      if (mensajeHtmlBox) mensajeHtmlBox.innerHTML = texto;
       if (btnEnviarEmail) btnEnviarEmail.href = crearEnlaceEmail(c['your-email'] || '', c, nombreCompleto);
+      if (btnEnviarEmailSaludo) btnEnviarEmailSaludo.href = crearEnlaceEmailSaludo(c['your-email'] || '', c, nombreCompleto);
     };
     actualizarMensajeYAsunto(selectorCorreo.value);
     selectorCorreo.addEventListener('change', (e) => actualizarMensajeYAsunto(e.target.value));
@@ -1832,18 +1889,8 @@ if (esCategoriaVillasPorLabel(tipoVivienda, c) && selectorCorreo) {
   const mensajeCopiado = trDetalle.querySelector('.mensaje-copiado');
   btnCopiar.innerHTML = copiarSVG;
  btnCopiar.addEventListener('click', () => {
-  // 🔹 CAMBIADO: Copiar directamente el contenido visible del textarea
-  const plain = textareaMensaje.value;
-  
-  // 🔹 CAMBIADO: Regenerar HTML basado en el texto actual del textarea
-  const detalleMensaje = btnCopiar.closest('.detalle-mensaje');
-  const nombreCompleto = detalleMensaje.dataset.nombreCompleto;
-  
-  // Determinar qué tipo de mensaje HTML generar basándose en el tipo de vivienda y selector
-  const html = plain
-    .split('\n')
-    .map(line => `<p>${line.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]))}</p>`)
-    .join('');
+  const html = mensajeHtmlBox?.innerHTML || '';
+  const plain = htmlToMailtoBody(html);
 
     if (navigator.clipboard && navigator.clipboard.write) {
       const clipboardItem = new ClipboardItem({
@@ -3285,11 +3332,12 @@ function getEmailTemplateByCategoria(categoriaId, payload = {}) {
   const categoria = getCategoriaById(categoriaId);
   const asunto = categoria?.email?.asunto || 'Seguimiento de tu solicitud';
   const editable = categoria?.email?.cuerpo || '';
- const saludo = getEmailPrefix(payload.nombre || '');
-const fullBody = `${saludo}\n\n${editable}`;
+  const saludo = getEmailPrefix(payload.nombre || '');
+  const fullBody = `${saludo}<br><br>${editable}`;
   const htmlBody = fullBody.replace(/\{\{([^}]+)\}\}/g, (_, key) => payload[key.trim()] ?? '');
   return { asunto, cuerpo: htmlBody };
 }
+
 // ====================== CARGA DE CONTACTOS ======================
 async function cargarContactos(incluirEliminados = false) {
   try {

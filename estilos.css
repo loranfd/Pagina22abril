@@ -180,6 +180,31 @@ body {
   color: #1e293b;
 }
 
+/* Editor enriquecido del cuerpo de email (Ajustes) */
+.email-editor-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.email-editor-toolbar .btn.active,
+.email-editor-toolbar .btn:active {
+  background-color: #cbd5e1;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.email-editor {
+  min-height: 180px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.email-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+}
+
 /* Paginación mejorada */
 #paginacion-controles {
   gap: 12px;

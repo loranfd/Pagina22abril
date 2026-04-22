@@ -1401,7 +1401,7 @@ function obtenerTemplateEmailPorContacto(contacto, nombreCompleto) {
 function crearEnlaceEmail(email, contacto, nombreCompleto) {
   const template = obtenerTemplateEmailPorContacto(contacto, nombreCompleto);
   const asunto = template.asunto || 'Seguimiento de tu solicitud';
-  const cuerpo = template.cuerpo || '';
+  const cuerpo = htmlToMailtoBody(template.cuerpo || '');
 
   // Correos que van en CCO (copia oculta)
   const correosCCO = 'tecnico@proyectopia.es;victorhermo@proyectopia.es';
@@ -1410,6 +1410,40 @@ function crearEnlaceEmail(email, contacto, nombreCompleto) {
   const destinatarioPrincipal = email || '';
   
   return `mailto:${destinatarioPrincipal}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}&bcc=${encodeURIComponent(correosCCO)}`;
+}
+
+function htmlToMailtoBody(html = '') {
+  const container = document.createElement('div');
+  container.innerHTML = String(html || '');
+
+  container.querySelectorAll('a[href]').forEach((anchor) => {
+    const text = (anchor.textContent || '').trim();
+    const href = (anchor.getAttribute('href') || '').trim();
+    anchor.textContent = href ? `${text || href} (${href})` : text;
+  });
+
+  container.querySelectorAll('b,strong').forEach((el) => {
+    el.textContent = `**${el.textContent || ''}**`;
+  });
+  container.querySelectorAll('i,em').forEach((el) => {
+    el.textContent = `*${el.textContent || ''}*`;
+  });
+  container.querySelectorAll('u').forEach((el) => {
+    el.textContent = `_${el.textContent || ''}_`;
+  });
+
+  const withBreaks = container.innerHTML
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/div>/gi, '\n');
+
+  const textContainer = document.createElement('div');
+  textContainer.innerHTML = withBreaks;
+  return (textContainer.textContent || '')
+    .replace(/\u00A0/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 function capitalizarPrimerasLetras(texto) {
   if (!texto) return '';

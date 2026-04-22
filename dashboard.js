@@ -870,18 +870,26 @@ function calcularEmbudo() {
   document.getElementById('res-clientes-100').textContent = (safeDiv(formularios, coste) * 100).toFixed(2);
 
   document.getElementById('res-inst-i-c').textContent = (safeDiv(clicsAtr, interacciones) * 100).toFixed(2) + '%';
-  document.getElementById('res-inst-c-cl').textContent = (safeDiv(formularios, clicsAtr) * 100).toFixed(2) + '%';
-  document.getElementById('res-inst-i-cl').textContent = (safeDiv(formularios, interacciones) * 100).toFixed(2) + '%';
+  document.getElementById('res-inst-clic-inter').textContent = safeDiv(clicsAtr, interacciones).toFixed(2);
+  document.getElementById('res-inst-int-form').textContent = safeDiv(interacciones, formularios).toFixed(2);
 
   document.getElementById('res-goo-ctr').textContent = (safeDiv(clicsAtr, impresiones) * 100).toFixed(2) + '%';
-  document.getElementById('res-goo-conv').textContent = (safeDiv(formularios, clicsAtr) * 100).toFixed(2) + '%';
   document.getElementById('res-goo-imp-lead').textContent = safeDiv(impresiones, formularios).toFixed(2);
-
-  document.querySelectorAll('#tabla-comparacion tbody tr').forEach(row => {
+  document.getElementById('res-goo-cpm-click').textContent = (safeDiv(clicsAtr, impresiones) * 1000).toFixed(2);
+  const filasComparacion = [...document.querySelectorAll('#tabla-comparacion tbody tr')];
+  filasComparacion.forEach(row => {
     const costeRow = parseFloat(row.querySelector('.cmp-coste')?.value) || 0;
     const formRow = parseFloat(row.querySelector('.cmp-form')?.value) || 0;
     row.querySelector('.cmp-cpl').textContent = safeDiv(costeRow, formRow).toFixed(2);
   });
+  const tbodyComparacion = document.querySelector('#tabla-comparacion tbody');
+  filasComparacion
+    .sort((a, b) => {
+      const av = parseFloat(a.querySelector('.cmp-cpl')?.textContent || '0') || 0;
+      const bv = parseFloat(b.querySelector('.cmp-cpl')?.textContent || '0') || 0;
+      return av - bv;
+    })
+    .forEach(row => tbodyComparacion?.appendChild(row));
 }
 
 

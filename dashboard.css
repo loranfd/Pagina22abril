@@ -305,6 +305,24 @@ body {
 .bg-instagram > summary { background: linear-gradient(135deg, #ec4899, #db2777); }
 .bg-google > summary { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
 .bg-compare > summary { background: linear-gradient(135deg, #4b5563, #1f2937); }
+.bg-advanced > summary { background: linear-gradient(135deg, #64748b, #334155); }
+
+.metric-subblock {
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  margin-bottom: 0.7rem;
+  background: #fff;
+}
+.metric-subblock > summary {
+  cursor: pointer;
+  padding: 0.75rem 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+.metric-subblock .embudo-resultados {
+  padding: 0 0.9rem 0.9rem;
+  margin-top: 0.4rem;
+}
 
 .tabla-comparacion {
   width: 100%;

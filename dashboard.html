@@ -114,7 +114,7 @@
 <!-- Métricas desplegables -->
 <div class="metrics-accordion">
   <details class="metric-block bg-campaign" open>
-    <summary>🧮 💰 RESULTADO DE CAMPAÑA</summary>
+    <summary>👉 🟢 RESUMEN DE CAMPAÑA</summary>
     <div class="metric-body">
       <div class="embudo-inputs">
         <div class="input-group">
@@ -146,16 +146,16 @@
       </div>
       <button id="btn-calcular-embudo" class="metric-btn">Calcular métricas</button>
       <div class="embudo-resultados">
-        <div class="embudo-metric"><p class="embudo-label">CPC (€)</p><p class="embudo-value" id="res-cpc">0.00</p></div>
-        <div class="embudo-metric"><p class="embudo-label">Conversión (%)</p><p class="embudo-value" id="res-conv">0.00%</p></div>
-        <div class="embudo-metric"><p class="embudo-label">Coste/Contacto (€)</p><p class="embudo-value" id="res-cpl">0.00</p></div>
+        <div class="embudo-metric"><p class="embudo-label">💰 Coste por contacto</p><p class="embudo-value" id="res-cpl">0.00</p></div>
+        <div class="embudo-metric"><p class="embudo-label">📈 Conversión (%)</p><p class="embudo-value" id="res-conv">0.00%</p></div>
+        <div class="embudo-metric"><p class="embudo-label">💸 CPC</p><p class="embudo-value" id="res-cpc">0.00</p></div>
       </div>
-      <p class="metric-help">Selecciona promoción (o todo) y rango de fechas para calcular automáticamente solo los clientes de ese periodo.</p>
+      <p class="metric-help">Vista principal, limpia y rápida para analizar la campaña.</p>
     </div>
   </details>
 
   <details class="metric-block bg-attraction">
-    <summary>📊 🔥 ATRACCIÓN</summary>
+    <summary>👉 🟡 ANUNCIO (ATRACCIÓN)</summary>
     <div class="metric-body">
       <div class="embudo-inputs">
         <div class="input-group"><label>Impresiones</label><input type="number" id="input-impresiones"></div>
@@ -167,12 +167,12 @@
         <div class="embudo-metric"><p class="embudo-label">Engagement (%)</p><p class="embudo-value" id="res-eng">0.00%</p></div>
         <div class="embudo-metric"><p class="embudo-label">Clic/Interacción</p><p class="embudo-value" id="res-clic-inter">0.00</p></div>
       </div>
-      <p class="metric-help">Te indica si el anuncio llama la atención, genera interés y provoca acción.</p>
+      <p class="metric-help">👉 Mide si el anuncio llama la atención.</p>
     </div>
   </details>
 
   <details class="metric-block bg-quality">
-    <summary>🧠 ⚡ CALIDAD DEL TRÁFICO</summary>
+    <summary>👉 🔵 TRÁFICO (CALIDAD)</summary>
     <div class="metric-body">
       <div class="embudo-resultados">
         <div class="embudo-metric"><p class="embudo-label">Conversión (%)</p><p class="embudo-value" id="res-calidad-conv">0.00%</p></div>
@@ -183,7 +183,7 @@
   </details>
 
   <details class="metric-block bg-profit">
-    <summary>💸 🎯 RENTABILIDAD</summary>
+    <summary>👉 🟣 RENTABILIDAD</summary>
     <div class="metric-body">
       <div class="embudo-resultados">
         <div class="embudo-metric"><p class="embudo-label">Coste por cliente (€)</p><p class="embudo-value" id="res-rent-cpl">0.00</p></div>
@@ -193,27 +193,26 @@
     </div>
   </details>
 
-  <details class="metric-block bg-instagram">
-    <summary>📱 🔍 INSTAGRAM PERFORMANCE</summary>
+  <details class="metric-block bg-advanced">
+    <summary>⚙️ ANÁLISIS AVANZADO</summary>
     <div class="metric-body">
-      <div class="embudo-resultados">
-        <div class="embudo-metric"><p class="embudo-label">Interacción → Clic (%)</p><p class="embudo-value" id="res-inst-i-c">0.00%</p></div>
-        <div class="embudo-metric"><p class="embudo-label">Clic → Cliente (%)</p><p class="embudo-value" id="res-inst-c-cl">0.00%</p></div>
-        <div class="embudo-metric"><p class="embudo-label">Interacción → Cliente (%)</p><p class="embudo-value" id="res-inst-i-cl">0.00%</p></div>
-      </div>
-      <p class="metric-help">Muestra el recorrido completo desde interacción hasta cliente.</p>
-    </div>
-  </details>
-
-  <details class="metric-block bg-google">
-    <summary>🔎 💡 GOOGLE PERFORMANCE</summary>
-    <div class="metric-body">
-      <div class="embudo-resultados">
-        <div class="embudo-metric"><p class="embudo-label">CTR (%)</p><p class="embudo-value" id="res-goo-ctr">0.00%</p></div>
-        <div class="embudo-metric"><p class="embudo-label">Conversión (%)</p><p class="embudo-value" id="res-goo-conv">0.00%</p></div>
-        <div class="embudo-metric"><p class="embudo-label">Impresiones por lead</p><p class="embudo-value" id="res-goo-imp-lead">0.00</p></div>
-      </div>
-      <p class="metric-help">Cuántas búsquedas necesitas para conseguir un cliente.</p>
+      <details class="metric-subblock">
+        <summary>📱 INSTAGRAM</summary>
+        <div class="embudo-resultados">
+          <div class="embudo-metric"><p class="embudo-label">Interacción → Clic (%)</p><p class="embudo-value" id="res-inst-i-c">0.00%</p></div>
+          <div class="embudo-metric"><p class="embudo-label">Clic/Interacción</p><p class="embudo-value" id="res-inst-clic-inter">0.00</p></div>
+          <div class="embudo-metric"><p class="embudo-label">Interacciones por formulario</p><p class="embudo-value" id="res-inst-int-form">0.00</p></div>
+        </div>
+      </details>
+      <details class="metric-subblock">
+        <summary>🔎 GOOGLE</summary>
+        <div class="embudo-resultados">
+          <div class="embudo-metric"><p class="embudo-label">CTR (%)</p><p class="embudo-value" id="res-goo-ctr">0.00%</p></div>
+          <div class="embudo-metric"><p class="embudo-label">Impresiones por lead</p><p class="embudo-value" id="res-goo-imp-lead">0.00</p></div>
+          <div class="embudo-metric"><p class="embudo-label">Clics por 1.000 impresiones</p><p class="embudo-value" id="res-goo-cpm-click">0.00</p></div>
+        </div>
+      </details>
+      <p class="metric-help">Bloques avanzados: útiles cuando necesitas más detalle por canal.</p>
     </div>
   </details>
 
@@ -228,7 +227,7 @@
         </tbody>
       </table>
       <button id="btn-add-campania" class="metric-btn secondary">+ Añadir campaña</button>
-      <p class="metric-help">Añade filas y compara rápidamente qué campaña gana.</p>
+      <p class="metric-help">Se ordena automáticamente por coste por cliente (de menor a mayor).</p>
     </div>
   </details>
 </div>

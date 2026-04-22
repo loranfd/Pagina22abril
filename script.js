@@ -1540,7 +1540,7 @@ function crearFilaDetalle(c, idPersona, tipoVivienda, nombre) {
                  box-shadow: 0 2px 6px rgba(108,92,231,0.1); font-size:.98rem; line-height:1.3;
                  display: flex; flex-direction: column; color: #000; text-align: left; box-sizing: border-box;">
         <div style="font-weight:600; font-size:1.03rem; margin-bottom:0.3rem; border-bottom:1px solid #cbd5e1; padding-bottom:0.18rem;">
-          Mensaje para copiar
+          Mensaje con formato
         </div>
        <div class="selector-correo-container" style="display: ${esCategoriaVillasPorLabel(tipoVivienda, c) ? 'flex' : 'none'}; align-items:center; gap:8px; margin-bottom: 0.3rem;">
           <label for="selector-correo-${idPersona}" style="font-weight:600; font-size:0.9rem;">Correo:</label>
@@ -1638,8 +1638,9 @@ if (esCategoriaVillasPorLabel(tipoVivienda, c)) {
           <a class="btn-enviar-email btn btn-sm btn-primary" href="${emailLink}" aria-label="Enviar email completo">
             Enviar email
           </a>
-          <a class="btn-enviar-email-saludo btn btn-sm btn-outline-primary" href="${emailLinkSaludo}" aria-label="Enviar email solo saludo">
-            Enviar email vacío
+          <a class="btn-enviar-email-saludo btn btn-sm btn-outline-primary" href="${emailLinkSaludo}" aria-label="Abrir borrador solo saludo">
+            <span style="display:block;">Abrir borrador</span>
+            <small style="display:block; color:#6b7280; font-weight:500;">(Solo saludo)</small>
           </a>
         </div>
       </div>
@@ -1658,8 +1659,9 @@ if (esCategoriaVillasPorLabel(tipoVivienda, c)) {
           <a class="btn-enviar-email" href="${crearEnlaceEmail(c['your-email'] || '', c, nombre)}" style="background-color: #2563eb; color: white; padding: 6px 14px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.92rem; transition: background-color 0.3s ease;" aria-label="Enviar email completo">
             Enviar email
           </a>
-          <a class="btn-enviar-email-saludo" href="${crearEnlaceEmailSaludo(c['your-email'] || '', c, nombre)}" style="border: 1px solid #2563eb; color: #1d4ed8; padding: 6px 14px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.92rem; background:#eff6ff;" aria-label="Enviar email solo saludo">
-            Enviar email vacío
+          <a class="btn-enviar-email-saludo" href="${crearEnlaceEmailSaludo(c['your-email'] || '', c, nombre)}" style="border: 1px solid #2563eb; color: #1d4ed8; padding: 6px 14px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.92rem; background:#eff6ff;" aria-label="Abrir borrador solo saludo">
+            <span style="display:block;">Abrir borrador</span>
+            <small style="display:block; color:#6b7280; font-weight:500;">(Solo saludo)</small>
           </a>
         </div>
       </div>
